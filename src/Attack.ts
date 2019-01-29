@@ -23,6 +23,24 @@ export function attackFirst(self: any)
 		self.log("ROBOT: " + rob.id + " is an enemy within vision");
 
         const dist = (rob.x - self.me.x)**2 + (rob.y - self.me.y)**2;
+		self.log("TEST1");
+
+		if(self.me.unit === SPECS.CASTLE)
+		{
+			return null;
+			/*
+			if(64 <= dist)
+			{
+				self.log("CASTLE ATTACKING:" + rob.id)	;
+				const robotToAttack = new Array(2);
+				robotToAttack[0] = rob.x - self.me.x;
+				robotToAttack[1] = rob.y - self.me.y;
+				return null;
+
+			}
+			*/
+		}
+
 		if(SPECS.UNITS[self.me.unit].ATTACK_RADIUS[0] <= dist && dist <= SPECS.UNITS[self.me.unit].ATTACK_RADIUS[1])
 		{
 			self.log("CAN ATTACK ROBOT:" + rob.id);
