@@ -9,7 +9,7 @@
     "test": "jest",
     "build": "rimraf build && rollup -c",
     "lint": "tslint -p tsconfig.json -c tslint.json -t stylish",
-    "start": "npm run build && bc19run -r build -b build",
+    "start": "npm run build && bc19run -r build -b example_js",
     "compile": "npm run build && bc19compile -d build -o build/compiled.js",
     "upload": "npm run compile && BC_USERNAME=test BC_PASSWORD=test bc19upload -i build/compiled.js"
   },
