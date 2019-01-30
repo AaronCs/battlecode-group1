@@ -2,6 +2,7 @@ import { BCAbstractRobot, SPECS } from 'battlecode';
 import { attackFirst } from "./Attack";
 import { castleBuild, pilgrimBuild } from './BuildUnits';
 import { miningLocations } from "./Mining";
+import { enemyCastle, horizontalFlip } from "./Movement";
 
 class MyRobot extends BCAbstractRobot {
   private step = 0;
@@ -24,6 +25,8 @@ class MyRobot extends BCAbstractRobot {
   public turn(): Action | Falsy {
     this.step++;
     const choice: number[] = this.randomValidLoc();
+	let enemyCastleLocation;
+
     switch (this.me.unit) {
       case SPECS.PILGRIM: {
         this.log("Pilgrim");
@@ -60,10 +63,19 @@ class MyRobot extends BCAbstractRobot {
       }
 
       case SPECS.CASTLE: {
+		// get castle coordinates
+		if(this.step === 1)
+		{
+			const horizontal = horizontalFlip(this); 
+			enemyCastleLocation = enemyCastle(this.me.x, this.me.y, this.map.length, this, horizontal);
+			this.log("CASTE LOCATION" + enemyCastleLocation[0] + ", " + enemyCastleLocation[1]);
+		}
+
         // If castle can't build, it tries to attack
         if (this.karbonite >= 10) {
           return castleBuild(this);
         }
+
         const attackingCoordinates = attackFirst(this);
         if (attackingCoordinates) {
           return this.attack(attackingCoordinates[0], attackingCoordinates[1]);
