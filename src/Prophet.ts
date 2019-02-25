@@ -1,12 +1,13 @@
 import { SPECS } from 'battlecode';
 import { attackFirst, rushCastle } from "./Attack";
-import { availableLoc, enemyCastle, horizontalFlip, manhatDist, simplePathFinder } from "./utils"
+import { availableLoc, enemyCastle, horizontalFlip, manhatDist, simplePathFinder, findClosestFriendlyCastles } from "./utils"
+import { parseMessage, constructCoordMessage } from "./Communication";
 
 export function handleProphet(self: any): Action | Falsy {
-     // const choice: number[] = availableLoc(this.me.x, this.me.y, this.getVisibleRobotMap(), this.map);
+		 // const choice: number[] = availableLoc(this.me.x, this.me.y, this.getVisibleRobotMap(), this.map);
+		 const visibleRobots = self.getVisibleRobotMap();
     if (self.me.turn === 1) {
       self.log("> > PROPHET FIRST TURN > >")
-      const visibleRobots = self.getVisibleRobots();
       const robotMap = self.getVisibleRobotMap();
       const listLength = visibleRobots.length;
       for (let i = 0; i < listLength; ++i) {
@@ -14,22 +15,83 @@ export function handleProphet(self: any): Action | Falsy {
         if (rob.unit === SPECS.CASTLE) {
           const horizontal = horizontalFlip(self);
           const enemyCastleLoc = enemyCastle([rob.x, rob.y], self.map, horizontal);
-		  self.friendlyCastleLoc.push([rob.x, rob.y]);
+		  	self.friendlyCastleLoc.push([rob.x, rob.y]);
           self.enemyCastleLoc.push(enemyCastleLoc);
-          self.destination = self.enemyCastleLoc[self.enemyCastleNum];
-          self.destinationQueue = simplePathFinder(self.map, robotMap, [self.me.x, self.me.y], self.destination);
+          // self.destination = self.enemyCastleLoc[self.enemyCastleNum];
+          // self.destinationQueue = simplePathFinder(self.map, robotMap, [self.me.x, self.me.y], self.destination);
           self.log("CASTLE LOCATION - PROPHET" + self.enemyCastleLoc[self.enemyCastleNum][0] + ", " + self.enemyCastleLoc[self.enemyCastleNum][1]);
         }
+			}
+			
+			const castle = findClosestFriendlyCastles(self);
+			self.resourceLocation = parseMessage(castle.signal);
+			self.destination = undefined;
+			self.log("MESSAGE::: " + castle.signal);
+			self.log("LOC:    " + self.resourceLocation);
+			if (self.resourceLocation[0] !== -1 && self.resourceLocation[1] !== -1) {
+				const message = constructCoordMessage(self.resourceLocation);
+				self.signal(message, 1);
+			}
+			
+		}
+	    // this.log(`Prophet health: ${this.me.health}`);
+			const attackingCoordinates = attackFirst(self);
+
+			if (attackingCoordinates) {
+				return self.attack(attackingCoordinates[0], attackingCoordinates[1]);
+			}
+		
+		if(self.destination === undefined)
+		{
+			self.log("DESTINATIONDSADASDSA");
+			if(self.resourceLocation[0] === -1 && self.resourceLocation[1] === -1)
+			{
+				readCastleSignal(self);
+			}
+			
+			self.destination = self.resourceLocation;
+			const robotMap = self.getVisibleRobotMap();
+			self.destinationQueue = simplePathFinder(self.map, robotMap, [self.me.x, self.me.y], self.destination);
+			
+		}
+
+    if (self.destinationQueue.length !== 0) {
+			self.log("DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+      // If the destination queue has coordinates and my current location is the 
+      // same as my next move's location, then pop next destination and set nextMove to it.
+      if(self.runPathAgain === 1)
+      {
+        self.log("DO NOTHING");
+        self.runPathAgain = 0;
+        self.log("NEXT MOVE =======" + self.nextMove);
       }
+      else{
+        self.nextMove = self.destinationQueue.pop();
+        self.log("NEXT MOVE =======" + self.nextMove);
+      }
+      if(visibleRobots[self.nextMove[1]][self.nextMove[0]] > 0) {
+        self.log("THERE'S A DUMB ROBOT IN THE WAY");
+        self.runPathAgain = 1;
+        return null;
+        self.destinationQueue = simplePathFinder(self.map, visibleRobots,[self.me.x, self.me.y], self.destination);
+        self.destinationQueue.pop();
+        self.nextMove = self.destinationQueue.pop();
+        self.log("ROBOTO IN WAY NEXT MOVE IS NOW::::" + self.nextMove);
+        self.log(`Destination: ${self.destination}, QUEUE: ${self.destinationQueue.reverse()}`)
+      }
+
+      const moveX = self.nextMove[0] - self.me.x;
+      const moveY = self.nextMove[1] - self.me.y;
+      self.log(`> > > Next Move: ${self.nextMove} > > >`)
+      self.log(`> > > MOVING ${moveX}, ${moveY} > > >`)
+      return self.move(moveX, moveY);
     }
 
-    // this.log(`Prophet health: ${this.me.health}`);
-    const attackingCoordinates = attackFirst(self);
 
-    if (attackingCoordinates) {
-      return self.attack(attackingCoordinates[0], attackingCoordinates[1]);
-    }
-	return checkerBoardMovement(self);
+		
+
+
+	// return checkerBoardMovement(self);
 	// return rushMovement(self);
 }
    
@@ -303,4 +365,13 @@ function firstSpot(self:any) {
     }
 	
 	return null;
+}
+
+function readCastleSignal(self: any) {
+	const castle = findClosestFriendlyCastles(self);
+	self.resourceLocation = parseMessage(castle.signal);
+	if (self.resourceLocation[0] !== -1 && self.resourceLocation[1] !== -1) {
+		const message = constructCoordMessage(self.resourceLocation);
+		self.signal(message, 1);
+	}
 }

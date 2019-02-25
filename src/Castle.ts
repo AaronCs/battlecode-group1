@@ -87,6 +87,8 @@ export function handleCastle(self : any): Action | Falsy {
     if (self.karbonite >= 25 && buildLoc) {
         // Temporarily only build 1 prophet
         self.log(`Building a prophet at (${buildLoc[0]}, ${buildLoc[1]}) turn (${self.me.turn})`);
+        self.signalQueue.push(orderProphet(self));
+        self.signal(self.signalQueue[0], 1);
         return self.buildUnit(SPECS.PROPHET, buildLoc[0], buildLoc[1]);
     }
 
@@ -132,6 +134,18 @@ function orderPilgrim(self: any) {
   }
   return constructCoordMessage(resourceLoc);
 }
+
+function orderProphet(self: any) {
+  // Broadcast a resource location to a pilgrim.
+  // Pilgrim should only listen to broadcasts once.
+  // Only build as many pilgrims as there are resources (or # resources / 2)
+  // Compare resource lengths. Use the bigger one. If equal, choose karbonite.
+  // TODO: Make sure to replenish mining locations if a pilgrim dies.
+  let resourceLoc;
+  resourceLoc = self.karboniteLocs.shift();
+  return constructCoordMessage(resourceLoc);
+}
+
 
 function checkSignals(self: any) {
   // Checks surrounding robots' signals.
